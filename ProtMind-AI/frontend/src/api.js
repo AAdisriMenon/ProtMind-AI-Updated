@@ -1,0 +1,36 @@
+// Thin client for the FastAPI backend (see backend/api.py).
+const BASE = import.meta.env.VITE_API_URL || "";
+
+async function request(path, options) {
+  const res = await fetch(`${BASE}${path}`, options);
+  if (!res.ok) throw new Error(`Server error (${res.status}) on ${path}`);
+  return res;
+}
+
+export async function postJson(path, payload) {
+  const res = await request(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function validateInput({ uniprotId, mutation, sequence, file }) {
+  const fd = new FormData();
+  fd.append("uniprot_id", uniprotId);
+  fd.append("mutation", mutation);
+  fd.append("sequence_input", sequence);
+  if (file) fd.append("file", file);
+  const res = await request("/api/step1/validate", { method: "POST", body: fd });
+  return res.json();
+}
+
+export async function fetchReportPdf(payload) {
+  const res = await request("/api/step10/pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.blob();
+}
