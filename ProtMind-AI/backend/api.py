@@ -46,6 +46,18 @@ def _mut_pos(mutation: str):
         return None
 
 
+# ---------------- Root status endpoint ----------------
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "service": "ProtMind AI Backend API",
+        "version": "2.0",
+        "health": "/api/health",
+        "documentation": "/docs"
+    }
+
+
 # ---------------- STEP 1: User Input ----------------
 @app.post("/api/step1/validate")
 async def step1(

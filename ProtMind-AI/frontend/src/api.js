@@ -1,8 +1,10 @@
 // Thin client for the FastAPI backend (see backend/api.py).
-const BASE = import.meta.env.VITE_API_URL || "";
+const rawBase = import.meta.env.VITE_API_URL || "https://protmind-ai-react.onrender.com";
+const BASE = rawBase.replace(/\/+$/, "");
 
 async function request(path, options) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const url = `${BASE}${path}`;
+  const res = await fetch(url, options);
   if (!res.ok) throw new Error(`Server error (${res.status}) on ${path}`);
   return res;
 }
