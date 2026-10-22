@@ -300,3 +300,13 @@ def step10(p: Payload):
 @app.get("/api/health")
 def health():
     return JSONResponse({"status": "ok"})
+
+
+# Mount built React frontend for production full-stack deployment
+import os
+from fastapi.staticfiles import StaticFiles
+
+_dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"))
+if os.path.exists(_dist_dir):
+    app.mount("/", StaticFiles(directory=_dist_dir, html=True), name="frontend")
+
