@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Component } from "react";
 import "./App.css";
 import { Gate, Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "./Steps";
 const heroProtein = "/hero.png";
@@ -37,18 +37,19 @@ const workflow = [
     desc: "Validate structural quality using stereochemical analysis, including favored, allowed and outlier regions in the Ramachandran plot."
   },
   {
-    n: "08", title: "Explainable AI & Mechanistic Insights", short: "Human-readable explanations", icon: "✧",
-    desc: "Translate model predictions into understandable evidence showing which features contribute to mutation effects and possible mechanisms."
-  },
-  {
-    n: "09", title: "Therapeutic Mapping & Interactive Dashboard", short: "Drug & target exploration", icon: "✚",
+    n: "08", title: "Therapeutic Targeting", short: "Drug & target exploration", icon: "💊",
     desc: "Connect mutation findings with drug targets, drug–target interactions, pathways, clinical evidence and therapeutic candidates.",
-    chips: ["ChEMBL", "Pathways", "Clinical evidence"]
+    chips: ["ChEMBL", "Pharmacological mechanisms", "Target druggability"]
   },
   {
-    n: "10", title: "Comprehensive Final Report", short: "Downloadable research report", icon: "▤",
-    desc: "Bring the analysis together into a traceable report covering mutation effects, structure, stability, validation, therapeutic evidence and references.",
-    chips: ["PDF", "JSON", "Data sources & references"]
+    n: "09", title: "Explainable Intelligence Summary", short: "Multi-evidence mechanistic reasoning", icon: "🧠",
+    desc: "Translate computational predictions and biophysical evidence into transparent mechanistic insights explaining how and why the verdict was issued.",
+    chips: ["Consensus verdict", "Biophysical drivers", "Evidence matrix", "Limitations"]
+  },
+  {
+    n: "10", title: "Automated Clinical Report", short: "Downloadable self-contained report", icon: "📄",
+    desc: "Bring the analysis together into a self-contained, traceable clinical report covering Steps 1–9 outputs, completeness check, structural plots, and references.",
+    chips: ["PDF", "Steps 1–9 outputs", "Completeness audit", "References"]
   },
 ];
 
@@ -60,9 +61,9 @@ const stepPages = [
   { title: "Protein Structure Prediction", icon: "🧩", sub: "Interactive AlphaFold 3D structure with the mutation highlighted.", Comp: Step5 },
   { title: "Thermodynamic Stability (ΔG & Potential Energy)", icon: "🔥", sub: "Gibbs free energy (ΔG & ΔΔG), CHARMM potential energy and literature calculations.", Comp: Step6 },
   { title: "Stereochemical Validation (Ramachandran)", icon: "📐", sub: "Backbone Phi/Psi angles on the Ramachandran plot with steric validation.", Comp: Step7 },
-  { title: "Explainable Intelligence Summary", icon: "🧠", sub: "Automated pathogenicity verdict across the whole pipeline.", Comp: Step8 },
-  { title: "Therapeutic Targeting", icon: "💊", sub: "ChEMBL drugs and mechanisms for the target protein.", Comp: Step9 },
-  { title: "Automated Clinical Report", icon: "📄", sub: "Export the full pipeline analytics as a PDF.", Comp: Step10 },
+  { title: "Therapeutic Targeting", icon: "💊", sub: "ChEMBL drugs, mechanisms, and pharmacological candidates for the target.", Comp: Step8 },
+  { title: "Explainable Intelligence Summary", icon: "🧠", sub: "Automated pathogenicity verdict, multi-evidence rationale, and biophysical drivers.", Comp: Step9 },
+  { title: "Automated Clinical Report", icon: "📄", sub: "Self-contained clinical report with complete pipeline outputs and completeness check.", Comp: Step10 },
 ];
 
 function App() {
@@ -166,9 +167,9 @@ function WelcomePage({ expanded, setExpanded, onAuth, onStart }) {
             ["🧬", "Understand Mutations", "Assess mutation effects, pathogenicity and functional consequences."],
             ["🔬", "Study Protein Structure", "Visualize structures and locate mutations in their molecular context."],
             ["⚡", "Analyze Stability", "Explore potential-energy components and Gibbs free-energy changes."],
-            ["🧠", "Explain Mechanisms", "Turn computational predictions into human-readable mechanistic insights."],
             ["💊", "Map Therapeutics", "Connect findings with drug targets, interactions and clinical evidence."],
-            ["📄", "Generate Reports", "Compile traceable results, evidence and references into a final report."],
+            ["🧠", "Explain Mechanisms", "Turn computational predictions and biophysical data into transparent mechanistic insights."],
+            ["📄", "Generate Reports", "Compile traceable results, evidence and references into a self-contained report."],
           ].map(([icon,title,desc]) => <div className="capability-card" key={title}><span>{icon}</span><h3>{title}</h3><p>{desc}</p></div>)}
         </div>
       </section>
@@ -257,9 +258,9 @@ function Dashboard({ user, onStart, onWorkflow }) {
           <span>🧬 <b>Mutation impact</b><small>Pathogenicity & function</small></span>
           <span>🔬 <b>Structure context</b><small>3D mutation mapping</small></span>
           <span>⚡ <b>Stability & ΔG</b><small>Energetic changes</small></span>
-          <span>🧠 <b>Explainable AI</b><small>Mechanistic insights</small></span>
           <span>💊 <b>Therapeutic mapping</b><small>Drug & target evidence</small></span>
-          <span>📄 <b>Final report</b><small>Traceable research output</small></span>
+          <span>🧠 <b>Explainable AI</b><small>Mechanistic insights</small></span>
+          <span>📄 <b>Final report</b><small>Self-contained research report</small></span>
         </div>
         <button className="primary-btn dashboard-start" onClick={onStart}>Start New Protein Analysis <span>→</span></button>
       </div>
@@ -275,6 +276,35 @@ function Dashboard({ user, onStart, onWorkflow }) {
       <div className="dashboard-steps">{workflow.map(w => <div className="dash-step" key={w.n}><span>{w.n}</span><div><b>{w.title}</b><small>{w.short}</small></div><i>→</i></div>)}</div>
     </section>
   </main>;
+}
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Pipeline Step caught in ErrorBoundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="step-panel" style={{ borderLeft: "4px solid #ef4444", padding: "1.5rem", background: "rgba(239, 68, 68, 0.08)" }}>
+          <h3 style={{ color: "#ef4444", marginTop: 0 }}>⚠️ Analysis Step Render Notice</h3>
+          <p style={{ color: "#cbd5e1" }}>
+            An unexpected error occurred while displaying this step: <code>{this.state.error?.message || "Unknown error"}</code>
+          </p>
+          <button className="primary-btn" onClick={() => this.setState({ hasError: false, error: null })}>
+            🔄 Reload This Step
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function AnalysisWorkspace({ payload, setPayload, onBack }) {
@@ -293,9 +323,11 @@ function AnalysisWorkspace({ payload, setPayload, onBack }) {
     </nav>
     <section className="analysis-heading"><div className="step-badge">{pad(step)}</div><div><span className="eyebrow">PROTMIND AI · ANALYSIS PIPELINE</span><h1>{page.icon} {page.title}</h1><p>{page.sub}</p></div>{payload && <div className="ready-pill"><span/> {payload.uniprot_id} · {payload.mutation}</div>}</section>
     <div className="step-body">
-      {step === 1
-        ? <Step1 payload={payload} onSaved={setPayload} />
-        : <Gate payload={payload}><Comp key={step} payload={payload} /></Gate>}
+      <ErrorBoundary key={step}>
+        {step === 1
+          ? <Step1 payload={payload} onSaved={setPayload} />
+          : <Gate payload={payload}><Comp key={step} payload={payload} /></Gate>}
+      </ErrorBoundary>
     </div>
     <div className="analysis-actions">
       <button className="secondary-btn" onClick={() => step === 1 ? onBack() : go(step - 1)}>{step === 1 ? "Back" : `← Step ${pad(step - 1)}`}</button>
