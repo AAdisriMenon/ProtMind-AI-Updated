@@ -1203,3 +1203,444 @@ button,input,textarea{font:inherit}
   font-size: 13px;
   color: #000000;
 }
+
+/* =========================================================
+   STEP 8, 9 & 10 UPGRADES: Explainable AI & Complete Report
+   ========================================================= */
+
+/* Step 8: Therapeutic Targeting */
+.therapeutic-step-wrap {
+  width: 100%;
+}
+
+/* Step 9: Explainable AI */
+.xai-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.xai-hero-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 255, 0.95)) !important;
+  border: 1px solid #cce1ed !important;
+  box-shadow: 0 8px 25px rgba(20, 65, 95, 0.08) !important;
+}
+
+.xai-hero-header {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #dce8ee;
+}
+
+@media (max-width: 850px) {
+  .xai-hero-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+.xai-verdict-label,
+.xai-driver-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #64869c;
+  margin-bottom: 4px;
+}
+
+.xai-verdict-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+}
+
+.xai-verdict-title.pathogenic {
+  color: #c62828;
+}
+
+.xai-verdict-title.likely_pathogenic {
+  color: #d84315;
+}
+
+.xai-verdict-title.likely_benign {
+  color: #1b5e20;
+}
+
+.xai-verdict-title.vus {
+  color: #b78103;
+}
+
+.xai-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.xai-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.xai-pill.error {
+  background: #fde8e8;
+  color: #9b1c1c;
+  border-color: #f8b4b4;
+}
+
+.xai-pill.warning {
+  background: #fef08a;
+  color: #854d0e;
+  border-color: #fde047;
+}
+
+.xai-pill.success {
+  background: #def7ec;
+  color: #03543f;
+  border-color: #bcf0da;
+}
+
+.xai-pill.info {
+  background: #e1effe;
+  color: #1e429f;
+  border-color: #b4c6fc;
+}
+
+.xai-pill.neutral {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.xai-driver-box {
+  background: rgba(235, 245, 252, 0.7);
+  border: 1px solid #c8dfea;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.xai-driver-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #154562;
+  line-height: 1.5;
+}
+
+/* XAI Tab Navigation */
+.xai-nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #dce8ee;
+}
+
+.xai-tab-btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #cfe0e8;
+  background: #ffffff;
+  color: #4a687d;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.xai-tab-btn:hover {
+  background: #f0f7fb;
+  color: #155577;
+  border-color: #aed1e2;
+}
+
+.xai-tab-btn.active {
+  background: linear-gradient(110deg, #097bc8, #0fa3b3);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(9, 123, 200, 0.25);
+}
+
+.xai-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.xai-narrative-text {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #27485f;
+  margin: 0;
+}
+
+/* XAI Workflow Timeline */
+.xai-workflow-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.xai-timeline-item {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.xai-timeline-num {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #eaf7f6;
+  border: 1px solid #bceae5;
+  color: #0a8f94;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.xai-timeline-body b {
+  display: block;
+  font-size: 13px;
+  color: #16415e;
+  margin-bottom: 3px;
+}
+
+.xai-timeline-body p {
+  margin: 0;
+  font-size: 12px;
+  color: #557488;
+  line-height: 1.5;
+}
+
+/* Evidence Matrix Pills */
+.matrix-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 5px;
+}
+
+.matrix-pill.bad {
+  background: #ffebe9;
+  color: #cf222e;
+}
+
+.matrix-pill.good {
+  background: #dafbe1;
+  color: #1a7f37;
+}
+
+.matrix-pill.neutral {
+  background: #f6f8fa;
+  color: #57606a;
+}
+
+.type-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  color: #43657c;
+  background: #eef6f9;
+  border: 1px solid #d0e4ed;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Supporting vs Conflicting List */
+.evidence-list-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evidence-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1px solid;
+}
+
+.evidence-item.positive {
+  background: #fff8f8;
+  border-color: #fbd5d5;
+}
+
+.evidence-item.neutral {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.evidence-icon {
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.evidence-item p {
+  margin: 0;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.55;
+}
+
+/* Follow-up Cards */
+.followup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.followup-card {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #dce8ee;
+  border-radius: 9px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.followup-type {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #097bc8;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+
+.followup-card b {
+  display: block;
+  font-size: 13px;
+  color: #173f59;
+  margin-bottom: 3px;
+}
+
+.followup-card p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #557286;
+  line-height: 1.5;
+}
+
+/* Step 10: Complete Report & Completeness Audit */
+.report-step-wrap {
+  width: 100%;
+}
+
+.completeness-audit-card {
+  background: #f8fcfe;
+  border: 1px solid #cfe0e8;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 16px 0;
+}
+
+.completeness-audit-card h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: #13425f;
+}
+
+.audit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 950px) {
+  .audit-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .audit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.audit-item {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #dce8ee;
+  border-radius: 8px;
+}
+
+.audit-num {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0b9b9c;
+}
+
+.audit-info b {
+  display: block;
+  font-size: 11.5px;
+  color: #1b4562;
+}
+
+.audit-info small {
+  display: block;
+  font-size: 9.5px;
+  color: #728c9d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.audit-status-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #057a55;
+  background: #def7ec;
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+
+.report-action-card {
+  margin-top: 16px;
+}
+
+.download-ready-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.download-btn {
+  font-size: 14px !important;
+  padding: 14px 24px !important;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 800;
+  box-shadow: 0 6px 20px rgba(9, 123, 200, 0.25);
+}

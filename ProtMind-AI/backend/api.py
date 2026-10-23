@@ -266,9 +266,9 @@ def step7(p: Payload):
     }
 
 
-# ---------------- STEP 9: Therapeutic Targeting ----------------
-@app.post("/api/step9")
-def step9(p: Payload):
+# ---------------- STEP 8: Therapeutic Targeting ----------------
+@app.post("/api/step8")
+def step8(p: Payload):
     try:
         gene = bk.fetch_uniprot_data(p.uniprot_id).get("Gene", "Unknown")
     except Exception:
@@ -276,35 +276,33 @@ def step9(p: Payload):
     return {"gene": gene, "drugs": bk.fetch_chembl_drugs(p.uniprot_id)}
 
 
-# ---------------- STEP 10: Clinical Report (PDF) ----------------
+@app.post("/api/step8/drugs")
+def step8_drugs(p: Payload):
+    return step8(p)
+
+
+# ---------------- STEP 9: Explainable AI ----------------
+@app.post("/api/step9")
+def step9(p: Payload):
+    return bk.generate_explainable_ai(p.model_dump())
+
+
+@app.post("/api/step9/explain")
+def step9_explain(p: Payload):
+    return step9(p)
+
+
+# Backward-compatibility alias for legacy clients expecting drug endpoint on step 9
+@app.post("/api/step9/drugs")
+def step9_drugs_compat(p: Payload):
+    return step8(p)
+
+
+# ---------------- STEP 10: Comprehensive Research Report (PDF) ----------------
 @app.post("/api/step10/pdf")
 def step10(p: Payload):
-    pos = _mut_pos(p.mutation) or 1
-    try:
-        pdb = bk.fetch_pdb_content(bk.fetch_alphafold_url(p.uniprot_id))
-    except Exception:
-        pdb = ""
-    angles = bk.calculate_phi_psi(pdb, pos)
-    
-    # Calculate stability shift status
-    f = bk.extract_features(p.sequence, p.mutation)
-    stab = bk.predict_thermodynamic_stability(
-        wt_aa=f["Wildtype AA"],
-        mut_aa=f["Mutant AA"],
-        wt_property=f["WT Property"],
-        mut_property=f["Mutant Property"],
-        phi=angles.get("phi") if angles else None,
-        psi=angles.get("psi") if angles else None
-    )
-    status_str = f"{stab['status']} (Delta-G: {stab['delta_g']} kcal/mol, Delta-Delta-G: +{stab['ddG']} kcal/mol)"
-
-    pdf = bk.generate_pdf_report(
-        payload=p.model_dump(),
-        ddg_status=status_str,
-        ppi_count=8,
-        angles=angles,
-    )
-    name = f"{p.uniprot_id}_{p.mutation}_Clinical_Report.pdf"
+    pdf = bk.generate_pdf_report(p.model_dump())
+    name = f"{p.uniprot_id}_{p.mutation}_Research_Report.pdf"
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
