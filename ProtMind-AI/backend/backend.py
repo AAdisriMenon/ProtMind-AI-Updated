@@ -1763,8 +1763,8 @@ class PDFReport(FPDF):
     def header(self):
         self.set_font("Arial", "I", 8)
         self.set_text_color(100, 115, 130)
-        self.cell(0, 5, sanitize_pdf_text("ProtMind AI - Comprehensive Research Report (Explainable Mutation Intelligence)"), 0, 0, "L")
-        self.cell(0, 5, "CONFIDENTIAL RESEARCH REPORT", 0, 1, "R")
+        self.cell(0, 5, sanitize_pdf_text("ProtMind AI - Automated Clinical Report (Explainable Mutation Intelligence)"), 0, 0, "L")
+        self.cell(0, 5, "CONFIDENTIAL CLINICAL REPORT", 0, 1, "R")
         self.set_draw_color(180, 205, 220)
         self.set_line_width(0.3)
         self.line(10, 13, 200, 13)
@@ -1774,7 +1774,7 @@ class PDFReport(FPDF):
         self.set_y(-12)
         self.set_font("Arial", "I", 8)
         self.set_text_color(110, 125, 140)
-        self.cell(0, 8, f"ProtMind AI v2.0  |  Self-Contained Research Report  |  Page {self.page_no()}/{{nb}}", 0, 0, "C")
+        self.cell(0, 8, f"ProtMind AI v2.0  |  Automated Clinical Report  |  Page {self.page_no()}/{{nb}}", 0, 0, "C")
 
 
 def generate_pdf_report(payload: dict, ddg_status: str = None, ppi_count: int = None, angles: dict = None) -> bytes:
@@ -1852,7 +1852,7 @@ def generate_pdf_report(payload: dict, ddg_status: str = None, ppi_count: int = 
         {"step": "Step 06", "name": "Thermodynamics & CHARMM", "status": "[COMPLETE]", "detail": f"Delta-Delta-G: {'+' if ddg > 0 else ''}{ddg:.2f} kcal/mol ({stability['status']}), full CHARMM force field."},
         {"step": "Step 07", "name": "Stereochemical Validation", "status": "[COMPLETE]" if phi is not None else "[UNAVAILABLE]", "detail": f"Phi: {phi:.1f} deg, Psi: {psi:.1f} deg ({procheck_zone_name}). PROCHECK stats generated." if phi is not None else "Atomic backbone coordinates not available."},
         {"step": "Step 08", "name": "Therapeutic Targeting", "status": "[COMPLETE]", "detail": f"{len(drugs)} targeted molecules identified in ChEMBL for target {gene}."},
-        {"step": "Step 09", "name": "Explainable AI Synthesis", "status": "[COMPLETE]", "detail": f"Consensus verdict: {xai['verdict']} ({xai['confidence']}). Traceable matrix."}
+        {"step": "Step 09", "name": "Explainable Intelligence Summary", "status": "[COMPLETE]", "detail": f"Consensus verdict: {xai['verdict']} ({xai['confidence']}). Traceable matrix."}
     ]
 
     # Initialize PDF
@@ -1864,7 +1864,7 @@ def generate_pdf_report(payload: dict, ddg_status: str = None, ppi_count: int = 
     pdf.add_page()
     pdf.set_font("Arial", "B", 18)
     pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 10, sanitize_pdf_text("ProtMind AI: Comprehensive Research Report"), ln=True, align="C")
+    pdf.cell(0, 10, sanitize_pdf_text("ProtMind AI: Automated Clinical Report"), ln=True, align="C")
     pdf.set_font("Arial", "", 10)
     pdf.set_text_color(80, 100, 120)
     pdf.cell(0, 5, sanitize_pdf_text("Evidence-Driven Biomolecular Investigation from Sequence to Mechanism to Medicine"), ln=True, align="C")
@@ -2274,10 +2274,10 @@ def generate_pdf_report(payload: dict, ddg_status: str = None, ppi_count: int = 
         pdf.cell(0, 5, sanitize_pdf_text(f"No small molecules or approved drugs documented in ChEMBL for accession {uniprot_id}."), ln=True)
     pdf.ln(3)
 
-    # Step 9: Explainable AI
+    # Step 9: Explainable Intelligence Summary
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 7, sanitize_pdf_text("9. Explainable AI: Mechanistic Reasoning & Consensus Verdict"), ln=True)
+    pdf.cell(0, 7, sanitize_pdf_text("9. Explainable Intelligence Summary: Mechanistic Reasoning & Consensus Verdict"), ln=True)
 
     # Verdict Hero Box
     pdf.set_fill_color(245, 250, 255)

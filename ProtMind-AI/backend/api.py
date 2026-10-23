@@ -298,11 +298,11 @@ def step9_drugs_compat(p: Payload):
     return step8(p)
 
 
-# ---------------- STEP 10: Comprehensive Research Report (PDF) ----------------
+# ---------------- STEP 10: Automated Clinical Report (PDF) ----------------
 @app.post("/api/step10/pdf")
 def step10(p: Payload):
     pdf = bk.generate_pdf_report(p.model_dump())
-    name = f"{p.uniprot_id}_{p.mutation}_Research_Report.pdf"
+    name = f"{p.uniprot_id}_{p.mutation}_Automated_Clinical_Report.pdf"
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{name}"'})
 

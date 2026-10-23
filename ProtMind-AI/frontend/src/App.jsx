@@ -42,13 +42,13 @@ const workflow = [
     chips: ["ChEMBL", "Pharmacological mechanisms", "Target druggability"]
   },
   {
-    n: "09", title: "Explainable AI", short: "Multi-evidence mechanistic reasoning", icon: "🧠",
+    n: "09", title: "Explainable Intelligence Summary", short: "Multi-evidence mechanistic reasoning", icon: "🧠",
     desc: "Translate computational predictions and biophysical evidence into transparent mechanistic insights explaining how and why the verdict was issued.",
     chips: ["Consensus verdict", "Biophysical drivers", "Evidence matrix", "Limitations"]
   },
   {
-    n: "10", title: "Comprehensive Research Report", short: "Downloadable self-contained report", icon: "📄",
-    desc: "Bring the analysis together into a self-contained, traceable report covering Steps 1–9 outputs, completeness check, structural plots, and references.",
+    n: "10", title: "Automated Clinical Report", short: "Downloadable self-contained report", icon: "📄",
+    desc: "Bring the analysis together into a self-contained, traceable clinical report covering Steps 1–9 outputs, completeness check, structural plots, and references.",
     chips: ["PDF", "Steps 1–9 outputs", "Completeness audit", "References"]
   },
 ];
@@ -62,8 +62,8 @@ const stepPages = [
   { title: "Thermodynamic Stability (ΔG & Potential Energy)", icon: "🔥", sub: "Gibbs free energy (ΔG & ΔΔG), CHARMM potential energy and literature calculations.", Comp: Step6 },
   { title: "Stereochemical Validation (Ramachandran)", icon: "📐", sub: "Backbone Phi/Psi angles on the Ramachandran plot with steric validation.", Comp: Step7 },
   { title: "Therapeutic Targeting", icon: "💊", sub: "ChEMBL drugs, mechanisms, and pharmacological candidates for the target.", Comp: Step8 },
-  { title: "Explainable AI", icon: "🧠", sub: "Automated pathogenicity verdict, multi-evidence rationale, and biophysical drivers.", Comp: Step9 },
-  { title: "Comprehensive Research Report", icon: "📄", sub: "Self-contained research report with complete pipeline outputs and completeness check.", Comp: Step10 },
+  { title: "Explainable Intelligence Summary", icon: "🧠", sub: "Automated pathogenicity verdict, multi-evidence rationale, and biophysical drivers.", Comp: Step9 },
+  { title: "Automated Clinical Report", icon: "📄", sub: "Self-contained clinical report with complete pipeline outputs and completeness check.", Comp: Step10 },
 ];
 
 function App() {

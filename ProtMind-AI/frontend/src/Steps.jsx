@@ -1183,7 +1183,7 @@ export function Step8({ payload }) {
   );
 }
 
-/* ---------- STEP 9: Explainable AI ---------- */
+/* ---------- STEP 9: Explainable Intelligence Summary ---------- */
 export function Step9({ payload }) {
   const { loading, data, error } = useStep("/api/step9", payload);
   const [activeTab, setActiveTab] = useState("overview");
@@ -1203,7 +1203,7 @@ export function Step9({ payload }) {
   return (
     <div className="xai-container">
       {/* Hero Consensus Verdict Card */}
-      <Panel title="🧠 Explainable AI Consensus Verdict & Mechanistic Summary" className="xai-hero-panel">
+      <Panel title="🧠 Explainable Intelligence Summary" className="xai-hero-panel">
         <div className="xai-hero-header">
           <div className="xai-verdict-box">
             <span className="xai-verdict-label">Automated Consensus Verdict</span>
@@ -1448,7 +1448,7 @@ export function Step9({ payload }) {
   );
 }
 
-/* ---------- STEP 10: Comprehensive Research Report ---------- */
+/* ---------- STEP 10: Automated Clinical Report ---------- */
 export function Step10({ payload }) {
   const [state, setState] = useState({ loading: true, blob: null, error: "" });
 
@@ -1470,12 +1470,12 @@ export function Step10({ payload }) {
     { n: "06", name: "Thermodynamics & CHARMM", status: "Complete", desc: "Gibbs ΔG/ΔΔG & empirical potential energy decomposition" },
     { n: "07", name: "Stereochemical Validation", status: "Complete", desc: "Backbone Φ/Ψ angles, PROCHECK plot & statistics" },
     { n: "08", name: "Therapeutic Targeting", status: "Complete", desc: "ChEMBL drug candidates & pharmacological mechanisms" },
-    { n: "09", name: "Explainable AI Synthesis", status: "Complete", desc: "Consensus verdict, evidence matrix & mechanistic drivers" },
+    { n: "09", name: "Explainable Intelligence Summary", status: "Complete", desc: "Consensus verdict, evidence matrix & mechanistic drivers" },
   ];
 
   return (
     <div className="report-step-wrap">
-      <Panel title="📄 Export Self-Contained Research Report">
+      <Panel title="📄 Export Automated Clinical Report">
         <Notice kind="info">
           This comprehensive PDF report compiles the complete dynamic outputs from <b>every step (Steps 1 through 9)</b>. 
           Researchers do not need to reopen the web interface to inspect any calculations, tables, plots, or references.
@@ -1501,19 +1501,19 @@ export function Step10({ payload }) {
 
         {/* Action Panel */}
         <div className="report-action-card">
-          {state.loading && <Loading text="📑 Assembling multi-page research report, compiling evidence matrix, and rendering high-resolution PROCHECK Ramachandran plot..." />}
+          {state.loading && <Loading text="📑 Assembling multi-page clinical report, compiling evidence matrix, and rendering high-resolution PROCHECK Ramachandran plot..." />}
           {state.error && <Notice kind="error">{state.error}</Notice>}
           {state.blob && (
             <div className="download-ready-box">
               <Notice kind="success">
-                ✅ <b>Self-Contained Research Report Ready!</b> Includes multi-term thermodynamic shifts, CHARMM force field tables, PROCHECK Ramachandran plots, ChEMBL small molecules, and Explainable AI evidence matrices.
+                ✅ <b>Automated Clinical Report Ready!</b> Includes multi-term thermodynamic shifts, CHARMM force field tables, PROCHECK Ramachandran plots, ChEMBL small molecules, and Explainable AI evidence matrices.
               </Notice>
               <button
                 type="button"
                 className="primary-btn large download-btn"
-                onClick={() => download(state.blob, `${payload.uniprot_id}_${payload.mutation}_Comprehensive_Report.pdf`)}
+                onClick={() => download(state.blob, `${payload.uniprot_id}_${payload.mutation}_Automated_Clinical_Report.pdf`)}
               >
-                📥 Download Comprehensive Research Report (PDF)
+                📥 Download Automated Clinical Report (PDF)
               </button>
             </div>
           )}
