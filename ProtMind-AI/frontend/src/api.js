@@ -1,12 +1,57 @@
 // Thin client for the FastAPI backend (see backend/api.py).
-const rawBase = import.meta.env.VITE_API_URL || "https://protmind-ai-react.onrender.com";
-const BASE = rawBase.replace(/\/+$/, "");
+
+function resolveApiBase() {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, "");
+  }
+  // When running locally in browser (e.g. localhost:5173), prioritize local backend on port 8000
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1") {
+      return "http://localhost:8000";
+    }
+  }
+  return "https://protmind-ai-react.onrender.com";
+}
+
+let BASE = resolveApiBase();
+const FALLBACK_BASE = (BASE.includes("localhost") || BASE.includes("127.0.0.1"))
+  ? "https://protmind-ai-react.onrender.com"
+  : "http://localhost:8000";
 
 async function request(path, options) {
-  const url = `${BASE}${path}`;
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`Server error (${res.status}) on ${path}`);
-  return res;
+  let url = `${BASE}${path}`;
+  try {
+    const res = await fetch(url, options);
+    // If primary server returns 404 on an upgraded endpoint, attempt fallback server
+    if (!res.ok && res.status === 404 && FALLBACK_BASE && BASE !== FALLBACK_BASE) {
+      try {
+        const altRes = await fetch(`${FALLBACK_BASE}${path}`, options);
+        if (altRes.ok) {
+          BASE = FALLBACK_BASE;
+          return altRes;
+        }
+      } catch {
+        // Fallback network failure, proceed to standard error
+      }
+    }
+    if (!res.ok) throw new Error(`Server error (${res.status}) on ${path}`);
+    return res;
+  } catch (err) {
+    // If primary server failed to connect (e.g. local backend wasn't running), attempt fallback
+    if (FALLBACK_BASE && BASE !== FALLBACK_BASE) {
+      try {
+        const altRes = await fetch(`${FALLBACK_BASE}${path}`, options);
+        if (altRes.ok) {
+          BASE = FALLBACK_BASE;
+          return altRes;
+        }
+      } catch {
+        // Ignore fallback failure
+      }
+    }
+    throw new Error(`Failed to reach backend (${err.message}) on ${path}`);
+  }
 }
 
 export async function postJson(path, payload) {

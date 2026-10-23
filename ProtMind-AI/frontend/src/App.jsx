@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Component } from "react";
 import "./App.css";
 import { Gate, Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "./Steps";
 const heroProtein = "/hero.png";
@@ -278,6 +278,35 @@ function Dashboard({ user, onStart, onWorkflow }) {
   </main>;
 }
 
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Pipeline Step caught in ErrorBoundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="step-panel" style={{ borderLeft: "4px solid #ef4444", padding: "1.5rem", background: "rgba(239, 68, 68, 0.08)" }}>
+          <h3 style={{ color: "#ef4444", marginTop: 0 }}>⚠️ Analysis Step Render Notice</h3>
+          <p style={{ color: "#cbd5e1" }}>
+            An unexpected error occurred while displaying this step: <code>{this.state.error?.message || "Unknown error"}</code>
+          </p>
+          <button className="primary-btn" onClick={() => this.setState({ hasError: false, error: null })}>
+            🔄 Reload This Step
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function AnalysisWorkspace({ payload, setPayload, onBack }) {
   const [step, setStep] = useState(1);
   const page = stepPages[step - 1];
@@ -294,9 +323,11 @@ function AnalysisWorkspace({ payload, setPayload, onBack }) {
     </nav>
     <section className="analysis-heading"><div className="step-badge">{pad(step)}</div><div><span className="eyebrow">PROTMIND AI · ANALYSIS PIPELINE</span><h1>{page.icon} {page.title}</h1><p>{page.sub}</p></div>{payload && <div className="ready-pill"><span/> {payload.uniprot_id} · {payload.mutation}</div>}</section>
     <div className="step-body">
-      {step === 1
-        ? <Step1 payload={payload} onSaved={setPayload} />
-        : <Gate payload={payload}><Comp key={step} payload={payload} /></Gate>}
+      <ErrorBoundary key={step}>
+        {step === 1
+          ? <Step1 payload={payload} onSaved={setPayload} />
+          : <Gate payload={payload}><Comp key={step} payload={payload} /></Gate>}
+      </ErrorBoundary>
     </div>
     <div className="analysis-actions">
       <button className="secondary-btn" onClick={() => step === 1 ? onBack() : go(step - 1)}>{step === 1 ? "Back" : `← Step ${pad(step - 1)}`}</button>
