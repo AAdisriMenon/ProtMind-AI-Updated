@@ -18,7 +18,14 @@ yarn-error.log*
 
 # Environment & OS
 .env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# Zip extraction subfolder
+ProtMind-AI-Updated/

@@ -1,6 +1,8 @@
-import { useState, Component } from "react";
+import { useState, useRef, Component } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import "./App.css";
 import { Gate, Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "./Steps";
+import { loginUser, registerUser } from "./api";
 const heroProtein = "/hero.png";
 
 const workflow = [
@@ -42,9 +44,9 @@ const workflow = [
     chips: ["ChEMBL", "Pharmacological mechanisms", "Target druggability"]
   },
   {
-    n: "09", title: "Explainable Intelligence Summary", short: "Multi-evidence mechanistic reasoning", icon: "🧠",
-    desc: "Translate computational predictions and biophysical evidence into transparent mechanistic insights explaining how and why the verdict was issued.",
-    chips: ["Consensus verdict", "Biophysical drivers", "Evidence matrix", "Limitations"]
+    n: "09", title: "Hybrid Quantum-Classical AI & Explainability", short: "Dual QNN & HGB consensus inference", icon: "⚛️",
+    desc: "Dynamic biophysical shifts evaluated simultaneously across a Classical HistGradientBoosting model and a 6-Qubit Parameterized Quantum Neural Network (QNN).",
+    chips: ["PennyLane QNN", "Classical HGB", "Biophysical Shifts", "Consensus Verdict"]
   },
   {
     n: "10", title: "Automated Clinical Report", short: "Downloadable self-contained report", icon: "📄",
@@ -62,7 +64,7 @@ const stepPages = [
   { title: "Thermodynamic Stability (ΔG & Potential Energy)", icon: "🔥", sub: "Gibbs free energy (ΔG & ΔΔG), CHARMM potential energy and literature calculations.", Comp: Step6 },
   { title: "Stereochemical Validation (Ramachandran)", icon: "📐", sub: "Backbone Phi/Psi angles on the Ramachandran plot with steric validation.", Comp: Step7 },
   { title: "Therapeutic Targeting", icon: "💊", sub: "ChEMBL drugs, mechanisms, and pharmacological candidates for the target.", Comp: Step8 },
-  { title: "Explainable Intelligence Summary", icon: "🧠", sub: "Automated pathogenicity verdict, multi-evidence rationale, and biophysical drivers.", Comp: Step9 },
+  { title: "Hybrid Quantum-Classical AI (HGB + QNN)", icon: "⚛️", sub: "PennyLane 6-qubit QNN and Classical HGB dual-model pathogenicity prediction with dynamic biophysical shifts.", Comp: Step9 },
   { title: "Automated Clinical Report", icon: "📄", sub: "Self-contained clinical report with complete pipeline outputs and completeness check.", Comp: Step10 },
 ];
 
@@ -195,34 +197,180 @@ function WelcomePage({ expanded, setExpanded, onAuth, onStart }) {
 }
 
 function AuthPage({ mode, onAuth, onSwitch, onHome }) {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", human: false });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [backendOffline, setBackendOffline] = useState(false);
+  const recaptchaRef = useRef(null);
   const isLogin = mode === "login";
-  const update = e => setForm(p => ({ ...p, [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
-  const submit = e => {
+
+  const update = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+
+  const submit = async e => {
     e.preventDefault();
-    if (!form.email || !form.password) return setError("Please enter your email and password.");
-    if (!form.human) return setError("Please confirm that you are human.");
-    if (!isLogin && (!form.name || !form.confirm)) return setError("Please complete all account fields.");
-    if (!isLogin && form.password !== form.confirm) return setError("Passwords do not match.");
-    setError(""); onAuth(form);
+    if (!form.email || !form.password) {
+      return setError("Please enter your email and password.");
+    }
+    if (!isLogin && (!form.name || !form.confirm)) {
+      return setError("Please complete all account fields.");
+    }
+    if (!isLogin && form.password !== form.confirm) {
+      return setError("Passwords do not match.");
+    }
+    if (!captchaToken) {
+      return setError("Please complete the Google reCAPTCHA human verification before proceeding.");
+    }
+
+    setError("");
+    setBackendOffline(false);
+    setLoading(true);
+
+    try {
+      let res;
+      if (isLogin) {
+        res = await loginUser({
+          email: form.email,
+          password: form.password,
+          captcha_token: captchaToken
+        });
+      } else {
+        res = await registerUser({
+          full_name: form.name,
+          email: form.email,
+          password: form.password,
+          captcha_token: captchaToken
+        });
+      }
+
+      if (res && res.access_token) {
+        localStorage.setItem("protmind_token", res.access_token);
+        onAuth({
+          name: res.user?.full_name || form.name || form.email.split("@")[0],
+          email: res.user?.email || form.email,
+          token: res.access_token
+        });
+      } else {
+        throw new Error("Authentication response was missing access token.");
+      }
+    } catch (err) {
+      console.error("Authentication error:", err);
+      const isConnError = err.message && (
+        err.message.includes("Failed to reach backend") ||
+        err.message.includes("Failed to fetch") ||
+        err.message.includes("NetworkError") ||
+        err.message.includes("ECONNREFUSED")
+      );
+      if (isConnError) {
+        setBackendOffline(true);
+      } else {
+        setError(err.message || "Authentication failed. Please verify your credentials and CAPTCHA.");
+      }
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+      }
+      setCaptchaToken("");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <main className="auth-page">
       <button className="back-link" onClick={onHome}>← Back to ProtMind AI</button>
       <section className="auth-shell">
-        <div className="auth-showcase"><span className="eyebrow">PROTMIND AI</span><h1>From mutation<br />to <em>mechanism.</em></h1><p>A secure workspace for protein mutation intelligence, structural analysis and therapeutic discovery.</p><div className="showcase-points"><span><b>01</b> Secure research workspace</span><span><b>02</b> Evidence-driven analysis</span><span><b>03</b> Explainable computational insights</span></div><div className="auth-orbit" /></div>
+        <div className="auth-showcase">
+          <span className="eyebrow">PROTMIND AI</span>
+          <h1>From mutation<br />to <em>mechanism.</em></h1>
+          <p>A secure workspace for protein mutation intelligence, structural analysis and therapeutic discovery.</p>
+          <div className="showcase-points">
+            <span><b>01</b> Secure research workspace (SQL + JWT)</span>
+            <span><b>02</b> Google reCAPTCHA human verification</span>
+            <span><b>03</b> Explainable computational insights</span>
+          </div>
+          <div className="auth-orbit" />
+        </div>
         <form className="auth-panel" onSubmit={submit}>
-          <div className="auth-icon">↗</div><span className="eyebrow">RESEARCH WORKSPACE</span><h2>{isLogin ? "Welcome back" : "Create your account"}</h2><p>{isLogin ? "Sign in to continue to your protein analysis workspace." : "Create a secure account for your research workspace."}</p>
+          <div className="auth-icon">↗</div>
+          <span className="eyebrow">RESEARCH WORKSPACE</span>
+          <h2>{isLogin ? "Welcome back" : "Create your account"}</h2>
+          <p>{isLogin ? "Sign in to continue to your protein analysis workspace." : "Create a secure account with SQL authentication and CAPTCHA verification."}</p>
+          
           {!isLogin && <AuthField name="name" label="Full name" value={form.name} onChange={update} placeholder="e.g. Vikas K R" />}
           <AuthField name="email" label="Email" value={form.email} onChange={update} placeholder="researcher@example.com" type="email" />
-          <AuthField name="password" label="Password" value={form.password} onChange={update} placeholder={isLogin ? "Enter your password" : "Create a password"} type="password" />
+          <AuthField name="password" label="Password" value={form.password} onChange={update} placeholder={isLogin ? "Enter your password" : "Create a password (min 6 chars)"} type="password" />
           {!isLogin && <AuthField name="confirm" label="Confirm password" value={form.confirm} onChange={update} placeholder="Repeat your password" type="password" />}
-          <label className="human-check"><input name="human" type="checkbox" checked={form.human} onChange={update}/><span><b>I'm human</b><small>Human verification for research workspace access</small></span><strong>CAPTCHA</strong></label>
-          {error && <div className="form-error">{error}</div>}
-          <button className="auth-submit" type="submit">{isLogin ? "Login to ProtMind AI" : "Create ProtMind AI Account"} <span>→</span></button>
-          <small className="secure-note">🔒 Secure authentication</small>
-          <div className="switch-auth">{isLogin ? "Don't have an account?" : "Already have an account?"}<button type="button" onClick={onSwitch}>{isLogin ? "Create Account" : "Login"}</button></div>
+          
+          {/* Functioning Google reCAPTCHA v2 Widget positioned strictly above submit button */}
+          <div className="auth-recaptcha-wrapper" style={{ margin: "14px 0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
+              theme="dark"
+              onChange={(token) => {
+                setCaptchaToken(token || "");
+                if (token) setError("");
+              }}
+              onExpired={() => setCaptchaToken("")}
+            />
+          </div>
+
+          {backendOffline ? (
+            <div style={{
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.4)",
+              borderRadius: "8px",
+              padding: "0.85rem",
+              margin: "12px 0",
+              fontSize: "0.82rem",
+              color: "#fca5a5"
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: "4px", color: "#f87171" }}>
+                ⚠️ Backend Server Offline (Port 8000)
+              </div>
+              <div style={{ marginBottom: "8px", color: "#e2e8f0", fontSize: "0.78rem", lineHeight: "1.4" }}>
+                The backend server isn't running on <code>localhost:8000</code>. To use live SQLite authentication (<code>protmind.db</code>), start the backend:
+                <pre style={{ margin: "6px 0", padding: "6px", background: "#0f172a", borderRadius: "4px", color: "#00F5D4", fontSize: "0.75rem", overflowX: "auto" }}>
+                  cd backend && uvicorn api:app --reload --port 8000
+                </pre>
+              </div>
+              <button
+                type="button"
+                style={{
+                  width: "100%",
+                  padding: "6px 12px",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  backgroundColor: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid #fca5a5",
+                  borderRadius: "6px",
+                  color: "#fca5a5",
+                  cursor: "pointer"
+                }}
+                onClick={() => {
+                  onAuth({
+                    name: form.name || form.email.split("@")[0] || "Researcher",
+                    email: form.email || "researcher@example.com",
+                    token: "offline_demo_token"
+                  });
+                }}
+              >
+                Or Continue in Offline Demo Mode →
+              </button>
+            </div>
+          ) : error ? (
+            <div className="form-error">{error}</div>
+          ) : null}
+          
+          <button className="auth-submit" type="submit" disabled={loading}>
+            {loading ? "Authenticating..." : (isLogin ? "Login to ProtMind AI" : "Create ProtMind AI Account")} <span>→</span>
+          </button>
+          
+          <small className="secure-note">🔒 SQLAlchemy + SQLite (protmind.db) · PyJWT · passlib[bcrypt]</small>
+          <div className="switch-auth">
+            {isLogin ? "Don't have an account?" : "Already have an account?"}
+            <button type="button" onClick={onSwitch}>{isLogin ? "Create Account" : "Login"}</button>
+          </div>
         </form>
       </section>
     </main>

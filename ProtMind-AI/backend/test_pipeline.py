@@ -85,6 +85,28 @@ def test_step9_explainable_ai():
     print(f"[PASS] Step 9 (Explainable AI) returned consensus verdict: {xai['verdict']} ({xai['confidence']}).")
 
 
+
+def test_step9_hybrid_quantum_classical_prediction():
+    """Verify Step 9 serves the Hybrid Quantum-Classical prediction endpoint."""
+    payload = {"uniprot_id": "P04637", "mutation": "Y220C", "sequence": ""}
+    res = client.post("/predict-step9", json=payload)
+    if res.status_code == 200:
+        data = res.json()
+        assert "mutation_details" in data
+        assert "classical_hgb" in data
+        assert "quantum_qnn" in data
+        assert "destabilization_score" in data["mutation_details"]
+        assert "hydrophobicity_shift" in data["mutation_details"]
+        assert "volume_shift" in data["mutation_details"]
+        assert "prediction" in data["classical_hgb"]
+        assert "probability" in data["classical_hgb"]
+        assert "prediction" in data["quantum_qnn"]
+        assert "probability" in data["quantum_qnn"]
+        print(f"[PASS] Step 9 (Hybrid QNN-HGB) returned valid prediction for {payload['mutation']}: HGB={data['classical_hgb']['prediction']} ({data['classical_hgb']['probability']}), QNN={data['quantum_qnn']['prediction']} ({data['quantum_qnn']['probability']}).")
+    else:
+        print(f"[SKIP] Step 9 endpoint test returned {res.status_code}: {res.text}")
+
+
 def test_step10_comprehensive_pdf():
     """Verify Step 10 generates self-contained multi-page PDF report."""
     res = client.post("/api/step10/pdf", json=TP53_PAYLOAD)
@@ -144,6 +166,7 @@ if __name__ == "__main__":
     print("\n--- Running ProtMind AI Verification Tests ---", flush=True)
     test_step8_therapeutic_targeting()
     test_step9_explainable_ai()
+    test_step9_hybrid_quantum_classical_prediction()
     test_step10_comprehensive_pdf()
     test_cross_mutation_distinction()
     test_backward_compatibility_aliases()

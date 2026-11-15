@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as $3Dmol from "3dmol";
 import Plotly from "plotly.js-dist-min";
 import { postJson, validateInput, fetchReportPdf } from "./api";
+import ProtMindAssistant from "./ProtMindAssistant";
 
 /* ---------- shared helpers ---------- */
 
@@ -1333,39 +1334,126 @@ export function Step8({ payload }) {
   );
 }
 
-/* ---------- STEP 9: Explainable Intelligence Summary ---------- */
+/* ---------- STEP 9: Hybrid Quantum-Classical Pathogenicity & Explainable AI ---------- */
 export function Step9({ payload }) {
-  const [state, setState] = useState({ loading: true, data: null, error: "" });
-  const [activeTab, setActiveTab] = useState("overview");
+  // Capture user's mutation string (pre-filled from payload or default Y220C)
+  const initialMutation = (payload?.mutation || "Y220C").trim().toUpperCase();
+  const initialUniprot = (payload?.uniprot_id || "P04637").trim().toUpperCase();
+  const initialSeq = payload?.sequence || "";
 
+  const [mutationInput, setMutationInput] = useState(initialMutation);
+  const [uniprotInput, setUniprotInput] = useState(initialUniprot);
+  const [sequenceInput, setSequenceInput] = useState(initialSeq);
+
+  // Hybrid Quantum-Classical State
+  const [hybridState, setHybridState] = useState({
+    loading: false,
+    data: null,
+    error: "",
+    lastRunMutation: "",
+    requestPayload: null
+  });
+
+  // Explainable AI multi-evidence state
+  const [xaiState, setXaiState] = useState({ loading: false, data: null, error: "" });
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showRawJson, setShowRawJson] = useState(false);
+
+  // Update inputs if parent payload changes
+  useEffect(() => {
+    if (payload?.mutation) setMutationInput(payload.mutation.trim().toUpperCase());
+    if (payload?.uniprot_id) setUniprotInput(payload.uniprot_id.trim().toUpperCase());
+    if (payload?.sequence !== undefined) setSequenceInput(payload.sequence);
+  }, [payload]);
+
+  // Execute Step 9 Hybrid Quantum-Classical Prediction
+  const runHybridPrediction = async (customMut) => {
+    const mut = (customMut !== undefined ? customMut : mutationInput || "Y220C").trim().toUpperCase();
+    const uid = (uniprotInput || "P04637").trim().toUpperCase();
+    const seq = sequenceInput || "";
+
+    // Payload MUST match exact schema: { "uniprot_id": "P04637", "mutation": "Y220C", "sequence": "" }
+    const postPayload = {
+      uniprot_id: uid,
+      mutation: mut,
+      sequence: seq
+    };
+
+    setHybridState(prev => ({
+      ...prev,
+      loading: true,
+      error: "",
+      requestPayload: postPayload,
+      lastRunMutation: mut
+    }));
+
+    try {
+      // Primary required call: fetch POST to http://127.0.0.1:8000/predict-step9
+      let response;
+      try {
+        response = await fetch("http://127.0.0.1:8000/predict-step9", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(postPayload)
+        });
+      } catch (directErr) {
+        // Fallback to relative /predict-step9 if direct 127.0.0.1 is blocked by browser CORS/environment
+        response = await fetch("/predict-step9", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(postPayload)
+        });
+      }
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errText}`);
+      }
+
+      const json = await response.json();
+      setHybridState({
+        loading: false,
+        data: json,
+        error: "",
+        lastRunMutation: mut,
+        requestPayload: postPayload
+      });
+    } catch (err) {
+      setHybridState({
+        loading: false,
+        data: null,
+        error: `Prediction failed: ${err.message}. Please verify the FastAPI backend is running at http://127.0.0.1:8000.`,
+        lastRunMutation: mut,
+        requestPayload: postPayload
+      });
+    }
+  };
+
+  // Run automatically on load or when mutation changes
+  useEffect(() => {
+    runHybridPrediction(payload?.mutation || "Y220C");
+  }, [payload?.mutation, payload?.uniprot_id]);
+
+  // Load Explainable AI multi-evidence rationale in parallel
   useEffect(() => {
     let alive = true;
-    setState({ loading: true, data: null, error: "" });
+    setXaiState({ loading: true, data: null, error: "" });
 
     async function loadXai() {
       try {
-        const res = await postJson("/api/step9", payload);
-        // Check if res has xai format or legacy drug format
-        if (res && res.verdict && res.workflow_trace) {
-          if (alive) setState({ loading: false, data: res, error: "" });
+        const res = await postJson("/api/step9", payload || { uniprot_id: "P04637", mutation: "Y220C", sequence: "" });
+        if (alive && res && res.verdict && res.workflow_trace) {
+          setXaiState({ loading: false, data: res, error: "" });
           return;
         }
-        // If legacy response, query /api/step9/explain
         try {
-          const res2 = await postJson("/api/step9/explain", payload);
-          if (alive) setState({ loading: false, data: res2, error: "" });
+          const res2 = await postJson("/api/step9/explain", payload || { uniprot_id: "P04637", mutation: "Y220C", sequence: "" });
+          if (alive) setXaiState({ loading: false, data: res2, error: "" });
         } catch {
-          // If explain endpoint also unavailable, normalize what we have
-          if (alive) setState({ loading: false, data: res || {}, error: "" });
+          if (alive) setXaiState({ loading: false, data: res || {}, error: "" });
         }
-      } catch (err1) {
-        try {
-          const res2 = await postJson("/api/step9/explain", payload);
-          if (alive) setState({ loading: false, data: res2, error: "" });
-        } catch (err2) {
-          // If both fail, normalize dynamically from payload so user never gets a blank screen!
-          if (alive) setState({ loading: false, data: {}, error: "" });
-        }
+      } catch {
+        if (alive) setXaiState({ loading: false, data: {}, error: "" });
       }
     }
 
@@ -1373,29 +1461,289 @@ export function Step9({ payload }) {
     return () => { alive = false; };
   }, [payload]);
 
-  if (state.loading) return <Loading text="🧠 Synthesizing multi-evidence proteomic rationale and explainable AI verdict..." />;
+  const xai = getNormalizedXai(xaiState.data, payload);
+  const presets = ["Y220C", "R175H", "R273H", "G245S", "A159V", "P72R", "N235S"];
 
-  const xai = getNormalizedXai(state.data, payload);
-  const verdictKind = xai.verdict_code === "pathogenic"
-    ? "error"
-    : xai.verdict_code === "likely_pathogenic"
-    ? "warning"
-    : xai.verdict_code === "likely_benign"
-    ? "success"
-    : "info";
+  const resData = hybridState.data;
+  const mutDetails = resData?.mutation_details;
+  const classicalHgb = resData?.classical_hgb;
+  const quantumQnn = resData?.quantum_qnn;
+
+  const isPathogenicHgb = classicalHgb?.prediction === "Pathogenic";
+  const isPathogenicQnn = quantumQnn?.prediction === "Pathogenic";
+  const isConsensus = isPathogenicHgb === isPathogenicQnn;
 
   return (
     <div className="xai-container">
-      {/* Hero Consensus Verdict Card */}
-      <Panel title="🧠 Explainable Intelligence Summary" className="xai-hero-panel">
+      {/* 1. Hybrid Quantum-Classical Model Control Hero */}
+      <div className="hybrid-hero-banner">
+        <div className="hybrid-hero-title-row">
+          <h2>
+            <span>⚛️</span> Step 9: Hybrid Quantum-Classical Pathogenicity Intelligence
+          </h2>
+          <div className="hybrid-model-tags">
+            <span className="hybrid-model-tag classical-tag">Classical HGB (Scikit-Learn)</span>
+            <span className="hybrid-model-tag quantum-tag">Quantum QNN (PennyLane)</span>
+          </div>
+        </div>
+        <p>
+          Step 9 integrates a dynamic biophysical feature extraction pipeline with a hybrid quantum-classical dual-inference architecture. 
+          Dynamic thermodynamic shifts, Volume variations, and BLOSUM62 matrices are evaluated simultaneously across an ensemble of 
+          <b> Classical HistGradientBoosting</b> and a <b> 6-Qubit Parameterized Quantum Neural Network</b>.
+        </p>
+
+        {/* Input Row for Capturing Mutation String */}
+        <form
+          className="hybrid-input-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runHybridPrediction(mutationInput);
+          }}
+        >
+          <div className="hybrid-input-group">
+            <label>Target UniProt ID</label>
+            <input
+              type="text"
+              className="hybrid-input-field"
+              value={uniprotInput}
+              onChange={(e) => setUniprotInput(e.target.value.toUpperCase())}
+              placeholder="e.g. P04637"
+            />
+          </div>
+
+          <div className="hybrid-input-group">
+            <label>Mutation String</label>
+            <input
+              type="text"
+              className="hybrid-input-field"
+              value={mutationInput}
+              onChange={(e) => setMutationInput(e.target.value.toUpperCase())}
+              placeholder="e.g. Y220C"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="hybrid-run-btn"
+            disabled={hybridState.loading}
+          >
+            {hybridState.loading ? "⚛️ Running Quantum-Classical Inference..." : "⚡ Run Step 9 Prediction"}
+          </button>
+        </form>
+
+        {/* Benchmark Presets */}
+        <div className="hybrid-presets">
+          <span className="hybrid-preset-label">Benchmark Hotspots:</span>
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              className={`hybrid-chip-btn ${mutationInput === preset ? "active" : ""}`}
+              onClick={() => {
+                setMutationInput(preset);
+                runHybridPrediction(preset);
+              }}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Loading & Error States */}
+      {hybridState.loading && (
+        <Loading text="⚛️ Querying http://127.0.0.1:8000/predict-step9 — Executing AngleEmbedding & StronglyEntanglingLayers on PennyLane QNN..." />
+      )}
+
+      {hybridState.error && (
+        <Notice kind="error">
+          <b>Prediction Notice:</b> {hybridState.error}
+        </Notice>
+      )}
+
+      {/* 2. Results Dashboard (Rendered from API Response) */}
+      {resData && !hybridState.loading && (
+        <>
+          {/* Consensus Banner */}
+          <div className={`consensus-banner ${isConsensus ? "consensus" : "divergence"}`}>
+            <span className="consensus-icon">{isConsensus ? "🛡️" : "⚖️"}</span>
+            <div className="consensus-text">
+              <b>
+                {isConsensus
+                  ? `Full Dual-Model Consensus: ${classicalHgb?.prediction?.toUpperCase()}`
+                  : "Model Divergence Detected (Quantum Topology vs Classical Gradient)"}
+              </b>
+              <p>
+                {isConsensus
+                  ? `Both Classical HistGradientBoosting (${((classicalHgb?.probability ?? 0) * 100).toFixed(1)}%) and Quantum QNN (${((quantumQnn?.probability ?? 0) * 100).toFixed(1)}%) arrive at the unanimous verdict for variant ${mutDetails?.mutation}.`
+                  : `HistGradientBoosting predicts ${classicalHgb?.prediction} (${((classicalHgb?.probability ?? 0) * 100).toFixed(1)}%) while PennyLane QNN predicts ${quantumQnn?.prediction} (${((quantumQnn?.probability ?? 0) * 100).toFixed(1)}%). Entangling layers register subtle non-local wave function correlations.`}
+              </p>
+            </div>
+          </div>
+
+          {/* Three-Card Main Results Grid */}
+          <div className="hybrid-results-grid">
+            {/* Card 1: Calculated Biophysical Shifts */}
+            <div className="hybrid-card biophysical">
+              <div className="hybrid-card-header">
+                <div>
+                  <h3 className="hybrid-card-title">🔬 Calculated Biophysical Shifts</h3>
+                  <span className="hybrid-card-sub">Dynamic Thermodynamic &amp; Structural Math</span>
+                </div>
+                <span className="hybrid-badge benign">Variant {mutDetails?.mutation}</span>
+              </div>
+
+              <div className="hybrid-shifts-list">
+                <div className="hybrid-shift-item">
+                  <div className="hybrid-shift-name">
+                    <b>Hydrophobicity Shift</b>
+                    <small>Kyte-Doolittle Hydropathy Δ</small>
+                  </div>
+                  <span className="hybrid-shift-val">
+                    {mutDetails?.hydrophobicity_shift > 0
+                      ? `+${mutDetails.hydrophobicity_shift}`
+                      : mutDetails?.hydrophobicity_shift}
+                  </span>
+                </div>
+
+                <div className="hybrid-shift-item">
+                  <div className="hybrid-shift-name">
+                    <b>Molecular Volume Shift</b>
+                    <small>Zamyatnin Packing Δ (Å³)</small>
+                  </div>
+                  <span className="hybrid-shift-val">
+                    {mutDetails?.volume_shift > 0
+                      ? `+${mutDetails.volume_shift} Å³`
+                      : `${mutDetails?.volume_shift} Å³`}
+                  </span>
+                </div>
+
+                <div className="hybrid-shift-item">
+                  <div className="hybrid-shift-name">
+                    <b>Destabilization Score</b>
+                    <small>Thermodynamic Instability Metric</small>
+                  </div>
+                  <span className="hybrid-shift-val">
+                    {typeof mutDetails?.destabilization_score === "string" ? (
+                      <span className="hybrid-shift-override">{mutDetails.destabilization_score}</span>
+                    ) : (
+                      mutDetails?.destabilization_score
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="hybrid-card-footer">
+                <b>Math Trajectory:</b>{" "}
+                {typeof mutDetails?.destabilization_score === "string"
+                  ? "Identified in REAL_STRUCTURAL_DATA hot-spot dictionary override."
+                  : "|ΔKD| + (|ΔVol| / 20.0) fallback calculation."}
+              </div>
+            </div>
+
+            {/* Card 2: Classical HistGradientBoosting */}
+            <div className="hybrid-card classical">
+              <div className="hybrid-card-header">
+                <div>
+                  <h3 className="hybrid-card-title">🌲 Classical Model (HGB)</h3>
+                  <span className="hybrid-card-sub">Scikit-learn HistGradientBoosting</span>
+                </div>
+                <span className={`hybrid-badge ${isPathogenicHgb ? "pathogenic" : "benign"}`}>
+                  {classicalHgb?.prediction}
+                </span>
+              </div>
+
+              <div className="hybrid-stat-main">
+                {((classicalHgb?.probability ?? 0) * 100).toFixed(2)}%
+              </div>
+              <div className="hybrid-stat-sub">Pathogenicity Probability Score</div>
+
+              <div className="hybrid-bar-track">
+                <div
+                  className="hybrid-bar-fill classical"
+                  style={{ width: `${Math.min(100, Math.max(0, (classicalHgb?.probability ?? 0) * 100))}%` }}
+                />
+              </div>
+
+              <div className="hybrid-card-footer">
+                <b>Inference Engine:</b> Standardized tabular gradient boosted decision trees over scaled biophysical features (joblib).
+              </div>
+            </div>
+
+            {/* Card 3: Quantum QNN (PennyLane) */}
+            <div className="hybrid-card quantum">
+              <div className="hybrid-card-header">
+                <div>
+                  <h3 className="hybrid-card-title">⚛️ Quantum Model (QNN)</h3>
+                  <span className="hybrid-card-sub">PennyLane Parameterized Circuit</span>
+                </div>
+                <span className={`hybrid-badge ${isPathogenicQnn ? "pathogenic" : "benign"}`}>
+                  {quantumQnn?.prediction}
+                </span>
+              </div>
+
+              <div className="hybrid-stat-main">
+                {((quantumQnn?.probability ?? 0) * 100).toFixed(2)}%
+              </div>
+              <div className="hybrid-stat-sub">Quantum Neural Probability</div>
+
+              <div className="hybrid-bar-track">
+                <div
+                  className="hybrid-bar-fill quantum"
+                  style={{ width: `${Math.min(100, Math.max(0, (quantumQnn?.probability ?? 0) * 100))}%` }}
+                />
+              </div>
+
+              <div className="hybrid-card-footer">
+                <b>Architecture:</b> 6 Qubits · 4 StronglyEntanglingLayers · AngleEmbedding(Y) · PauliZ(0) expectation.
+              </div>
+            </div>
+          </div>
+
+          {/* Toggleable Raw JSON Payload & Response Viewer */}
+          <div style={{ marginBottom: "18px" }}>
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => setShowRawJson(!showRawJson)}
+            >
+              {showRawJson ? "▲ Hide Exact API Network Exchange" : "▼ Inspect Exact API Request Payload & JSON Response"}
+            </button>
+            {showRawJson && (
+              <div className="two-col raw-json-card">
+                <Panel title="📤 POST Request Payload (http://127.0.0.1:8000/predict-step9)">
+                  <pre className="raw-json-viewer">
+                    {JSON.stringify(hybridState.requestPayload, null, 2)}
+                  </pre>
+                </Panel>
+                <Panel title="📥 Parsed API Response JSON">
+                  <pre className="raw-json-viewer">
+                    {JSON.stringify(resData, null, 2)}
+                  </pre>
+                </Panel>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 3. Multi-Evidence Explainable Intelligence Suite */}
+      <Panel title="🧠 Explainable Intelligence Summary & Evidence Synthesis" className="xai-hero-panel">
         <div className="xai-hero-header">
           <div className="xai-verdict-box">
-            <span className="xai-verdict-label">Automated Consensus Verdict</span>
+            <span className="xai-verdict-label">Consensus Proteomic Verdict</span>
             <h2 className={`xai-verdict-title ${xai.verdict_code}`}>{xai.verdict}</h2>
             <div className="xai-badge-row">
-              <span className={`xai-pill ${verdictKind}`}><b>Confidence:</b> {xai.confidence} ({xai.confidence_score}%)</span>
-              <span className="xai-pill info"><b>Evidence Score:</b> {xai.evidence_score > 0 ? `+${xai.evidence_score}` : xai.evidence_score}</span>
-              <span className="xai-pill neutral"><b>Target:</b> {xai.gene} ({xai.mutation})</span>
+              <span className={`xai-pill ${xai.verdict_code === "pathogenic" ? "error" : "success"}`}>
+                <b>Confidence:</b> {xai.confidence} ({xai.confidence_score}%)
+              </span>
+              <span className="xai-pill info">
+                <b>Evidence Score:</b> {xai.evidence_score > 0 ? `+${xai.evidence_score}` : xai.evidence_score}
+              </span>
+              <span className="xai-pill neutral">
+                <b>Target:</b> {xai.gene} ({xai.mutation})
+              </span>
             </div>
           </div>
           <div className="xai-driver-box">
@@ -1403,10 +1751,6 @@ export function Step9({ payload }) {
             <p className="xai-driver-text">{xai.primary_mechanism}</p>
           </div>
         </div>
-
-        <Notice kind="info">
-          🛡️ <b>Transparent Research Evidence:</b> Every conclusion below is directly traced from biophysical potential calculations, evolutionary conservation scores, and verified database annotations. Computational predictions are explicitly distinguished from experimentally validated data.
-        </Notice>
 
         {/* Tab Navigation */}
         <div className="xai-nav-tabs">
@@ -1447,7 +1791,6 @@ export function Step9({ payload }) {
               <p className="xai-narrative-text">{xai.summary_narrative}</p>
             </Panel>
           </div>
-
           <Panel title="📈 Key Pipeline Diagnostics Summary">
             <div className="energy-grid">
               <div className="energy-card">
@@ -1570,7 +1913,7 @@ export function Step9({ payload }) {
         </div>
       )}
 
-      {/* TAB 5: Biophysical & Structural Drivers */}
+      {/* TAB 5: Biophysical Drivers */}
       {activeTab === "drivers" && (
         <div className="xai-tab-content">
           <div className="two-col">
@@ -1654,7 +1997,7 @@ export function Step10({ payload }) {
     { n: "06", name: "Thermodynamics & CHARMM", status: "Complete", desc: "Gibbs ΔG/ΔΔG & empirical potential energy decomposition" },
     { n: "07", name: "Stereochemical Validation", status: "Complete", desc: "Backbone Φ/Ψ angles, PROCHECK plot & statistics" },
     { n: "08", name: "Therapeutic Targeting", status: "Complete", desc: "ChEMBL drug candidates & pharmacological mechanisms" },
-    { n: "09", name: "Explainable Intelligence Summary", status: "Complete", desc: "Consensus verdict, evidence matrix & mechanistic drivers" },
+    { n: "09", name: "Hybrid Quantum-Classical Intelligence", status: "Complete", desc: "PennyLane 6-qubit QNN, Classical HGB, biophysical shifts & destabilization score" },
   ];
 
   return (
@@ -1703,6 +2046,9 @@ export function Step10({ payload }) {
           )}
         </div>
       </Panel>
+
+      {/* Token-Optimized AI Chat Assistant (Strictly in Step 10) */}
+      <ProtMindAssistant payload={payload} />
     </div>
   );
 }

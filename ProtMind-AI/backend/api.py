@@ -46,9 +46,9 @@ def _mut_pos(mutation: str):
         return None
 
 
-# ---------------- Root status endpoint ----------------
-@app.get("/")
-def root():
+# ---------------- Status endpoint ----------------
+@app.get("/api/status")
+def status_endpoint():
     return {
         "status": "online",
         "service": "ProtMind AI Backend API",
@@ -281,6 +281,26 @@ def step8_drugs(p: Payload):
     return step8(p)
 
 
+# ---------------- STEP 9: Explainable AI & Hybrid Quantum-Classical Predictor ----------------
+try:
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from fastapi_app import predict_pathogenicity as step9_predict_pathogenicity, MutationInput as Step9MutationInput
+
+    @app.post("/predict-step9")
+    def predict_step9_direct(request: Step9MutationInput):
+        """Direct Step 9 Hybrid Quantum-Classical prediction endpoint matching requirements."""
+        return step9_predict_pathogenicity(request)
+
+    @app.post("/api/step9/predict")
+    def api_predict_step9_endpoint(request: Step9MutationInput):
+        """Namespaced Step 9 prediction endpoint."""
+        return step9_predict_pathogenicity(request)
+except Exception as _e:
+    print(f"Notice: Hybrid Quantum-Classical model not loaded in api.py: {_e}")
+
+
 # ---------------- STEP 9: Explainable AI ----------------
 @app.post("/api/step9")
 def step9(p: Payload):
@@ -312,6 +332,23 @@ def health():
     return JSONResponse({"status": "ok"})
 
 
+# ---------------- Authentication & AI Chat Assistant Routers ----------------
+try:
+    from auth import router as auth_router
+    app.include_router(auth_router)
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(auth_router, prefix="/api/auth")
+except Exception as _auth_err:
+    print(f"Notice: auth router not loaded in api.py: {_auth_err}")
+
+try:
+    from chat import chat_router, format_pipeline_context
+    app.include_router(chat_router)
+    app.include_router(chat_router, prefix="/api")
+except Exception as _chat_err:
+    print(f"Notice: chat router not loaded in api.py: {_chat_err}")
+
+
 # Mount built React frontend for production full-stack deployment
 import os
 from fastapi.staticfiles import StaticFiles
@@ -319,4 +356,14 @@ from fastapi.staticfiles import StaticFiles
 _dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"))
 if os.path.exists(_dist_dir):
     app.mount("/", StaticFiles(directory=_dist_dir, html=True), name="frontend")
+else:
+    @app.get("/")
+    def root():
+        return {
+            "status": "online",
+            "service": "ProtMind AI Backend API",
+            "version": "2.0",
+            "health": "/api/health",
+            "documentation": "/docs"
+        }
 

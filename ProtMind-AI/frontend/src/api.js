@@ -10,14 +10,14 @@ function resolveApiBase() {
     if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "::1") {
       return "http://localhost:8000";
     }
+    // Production deployment (e.g. Railway container serving frontend + backend on the same origin)
+    return window.location.origin;
   }
-  return "https://protmind-ai-react.onrender.com";
+  return "";
 }
 
 let BASE = resolveApiBase();
-const FALLBACK_BASE = (BASE.includes("localhost") || BASE.includes("127.0.0.1"))
-  ? "https://protmind-ai-react.onrender.com"
-  : "http://localhost:8000";
+const FALLBACK_BASE = "";
 
 async function request(path, options) {
   let url = `${BASE}${path}`;
@@ -80,4 +80,69 @@ export async function fetchReportPdf(payload) {
     body: JSON.stringify(payload),
   });
   return res.blob();
+}
+
+export async function predictStep9({ uniprotId = "P04637", mutation = "Y220C", sequence = "" } = {}) {
+  const payload = {
+    uniprot_id: uniprotId,
+    mutation: mutation,
+    sequence: sequence
+  };
+  try {
+    return await postJson("/predict-step9", payload);
+  } catch (err) {
+    return await postJson("/api/step9/predict", payload);
+  }
+}
+
+export async function registerUser({ name, full_name, email, password, captcha_token }) {
+  const payload = {
+    full_name: full_name || name,
+    email,
+    password,
+    captcha_token
+  };
+  try {
+    return await postJson("/register", payload);
+  } catch (err) {
+    try {
+      return await postJson("/api/register", payload);
+    } catch {
+      throw err;
+    }
+  }
+}
+
+export async function loginUser({ email, password, captcha_token }) {
+  const payload = {
+    email,
+    password,
+    captcha_token
+  };
+  try {
+    return await postJson("/login", payload);
+  } catch (err) {
+    try {
+      return await postJson("/api/login", payload);
+    } catch {
+      throw err;
+    }
+  }
+}
+
+export async function sendChatMessage({ message, history = [], pipeline_data = {} }) {
+  const payload = {
+    message,
+    history,
+    pipeline_data
+  };
+  try {
+    return await postJson("/chat-assistant", payload);
+  } catch (err) {
+    try {
+      return await postJson("/api/chat-assistant", payload);
+    } catch {
+      throw err;
+    }
+  }
 }
